@@ -1,0 +1,89 @@
+# ─────────────────────────────────────────────────────────────
+# Maven & Build Artifacts
+# ─────────────────────────────────────────────────────────────
+target/
+build/
+dist/
+out/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ─────────────────────────────────────────────────────────────
+# Logs, Dumps & Temp Files
+# ─────────────────────────────────────────────────────────────
+logs/
+*.log
+*.dump
+*.dumpstream
+hs_err_pid*
+replay_pid*
+
+# ─────────────────────────────────────────────────────────────
+# Docker & Local Data
+# ─────────────────────────────────────────────────────────────
+mongo-data/
+.docker/
+
+# ─────────────────────────────────────────────────────────────
+# Environment & Secrets
+# ─────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─────────────────────────────────────────────────────────────
+# IDEs & Editors
+# ─────────────────────────────────────────────────────────────
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Eclipse / Spring Tool Suite (STS)
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/
+
+# ─────────────────────────────────────────────────────────────
+# OS Specific Files
+# ─────────────────────────────────────────────────────────────
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+
+# ─────────────────────────────────────────────────────────────
+# AI & Assistant Cache
+# ─────────────────────────────────────────────────────────────
+.gemini/
+.system_generated/

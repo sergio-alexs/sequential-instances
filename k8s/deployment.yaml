@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sequential-instances
+  labels:
+    app: sequential-instances
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sequential-instances
+  template:
+    metadata:
+      labels:
+        app: sequential-instances
+    spec:
+      containers:
+        - name: sequential-instances
+          image: sequential-instances:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            # Downward API: Inyectar nombre del Pod para identificar la instancia
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            # Downward API: Inyectar IP del Pod
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            # Nombre del servicio / grupo
+            - name: SPRING_APPLICATION_NAME
+              value: "sequential-instances"
+            # URI de MongoDB (ajustar según tu servicio de Mongo en K8s)
+            - name: SPRING_DATA_MONGODB_URI
+              value: "mongodb://mongo:27017/sequential-instances"
+            # Prefijo para el identificador de proceso (proceso_cre_1, proceso_cre_2...)
+            - name: INSTANCE_PROCESS_PREFIX
+              value: "proceso_cre_"
+            # Intervalo de heartbeat (15s) y umbral de muerte (45s) para no saturar MongoDB
+            - name: INSTANCE_HEARTBEAT_INTERVAL_MS
+              value: "15000"
+            - name: INSTANCE_EXPIRY_THRESHOLD_MS
+              value: "45000"
+            - name: INSTANCE_EXPIRY_CHECK_INTERVAL_MS
+              value: "60000"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "1000m"
+          # Actuator Liveness Probe (K8s reinicia el contenedor si falla)
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          # Actuator Readiness Probe (K8s no envía tráfico hasta que esté listo)
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sequential-instances
+  labels:
+    app: sequential-instances
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: sequential-instances
+

@@ -1,0 +1,208 @@
+{
+	"info": {
+		"_postman_id": "seq-instances-poc",
+		"name": "Sequential Instances PoC",
+		"description": "Colección para probar la PoC de instancias secuenciales con 3 instancias en puertos 8081, 8082 y 8083, incluyendo endpoints de instancias y Actuator Health Indicator.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "host",
+			"value": "localhost"
+		},
+		{
+			"key": "port1",
+			"value": "8081"
+		},
+		{
+			"key": "port2",
+			"value": "8082"
+		},
+		{
+			"key": "port3",
+			"value": "8083"
+		}
+	],
+	"item": [
+		{
+			"name": "Instancia 1 (8081)",
+			"item": [
+				{
+					"name": "Listar instancias del grupo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port1}}/instances",
+							"protocol": "http",
+							"host": ["{{host}}"],
+							"port": "{{port1}}",
+							"path": ["instances"]
+						},
+						"description": "Lista todas las instancias registradas del mismo grupo (spring.application.name) vistas desde la instancia 1."
+					}
+				},
+				{
+					"name": "Listar instancias de TODOS los grupos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port1}}/instances/all",
+							"protocol": "http",
+							"host": ["{{host}}"],
+							"port": "{{port1}}",
+							"path": ["instances", "all"]
+						},
+						"description": "Lista todas las instancias registradas en el clúster sin importar el grupo."
+					}
+				},
+				{
+					"name": "Info de esta instancia",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port1}}/instances/me",
+							"protocol": "http",
+							"host": ["{{host}}"],
+							"port": "{{port1}}",
+							"path": ["instances", "me"]
+						},
+						"description": "Retorna los datos de la instancia actual (número asignado, estado, último heartbeat)."
+					}
+				},
+				{
+					"name": "Bean ProcessContext (proceso_cre_X)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port1}}/instances/context",
+							"protocol": "http",
+							"host": ["{{host}}"],
+							"port": "{{port1}}",
+							"path": ["instances", "context"]
+						},
+						"description": "Retorna el Bean inyectable ProcessContext con instanceNumber, processIdentifier (proceso_cre_1), podName y groupName."
+					}
+				},
+				{
+					"name": "Actuator Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port1}}/actuator/health",
+							"protocol": "http",
+							"host": ["{{host}}"],
+							"port": "{{port1}}",
+							"path": ["actuator", "health"]
+						},
+						"description": "Retorna el estado de salud de Spring Boot y el bloque custom 'instanceRegistration' con los detalles de la instancia 1."
+					}
+				}
+			]
+		},
+		{
+			"name": "Instancia 2 (8082)",
+			"item": [
+				{
+					"name": "Listar instancias del grupo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port2}}/instances",
+							"protocol": "http",
+							"host": ["{{host}}"],
+							"port": "{{port2}}",
+							"path": ["instances"]
+						},
+						"description": "Lista todas las instancias registradas del mismo grupo vistas desde la instancia 2."
+					}
+				},
+				{
+					"name": "Info de esta instancia",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port2}}/instances/me",
+							"protocol": "http",
+							"host": ["{{host}}"],
+							"port": "{{port2}}",
+							"path": ["instances", "me"]
+						},
+						"description": "Retorna los datos de la instancia 2."
+					}
+				},
+				{
+					"name": "Actuator Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port2}}/actuator/health",
+							"protocol": "http",
+							"host": ["{{host}}"],
+							"port": "{{port2}}",
+							"path": ["actuator", "health"]
+						},
+						"description": "Retorna el estado de salud y los detalles de la instancia 2 en 'instanceRegistration'."
+					}
+				}
+			]
+		},
+		{
+			"name": "Instancia 3 (8083)",
+			"item": [
+				{
+					"name": "Listar instancias del grupo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port3}}/instances",
+							"protocol": "http",
+							"host": ["{{host}}"],
+							"port": "{{port3}}",
+							"path": ["instances"]
+						},
+						"description": "Lista todas las instancias registradas del mismo grupo vistas desde la instancia 3."
+					}
+				},
+				{
+					"name": "Info de esta instancia",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port3}}/instances/me",
+							"protocol": "http",
+							"host": ["{{host}}"],
+							"port": "{{port3}}",
+							"path": ["instances", "me"]
+						},
+						"description": "Retorna los datos de la instancia 3."
+					}
+				},
+				{
+					"name": "Actuator Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port3}}/actuator/health",
+							"protocol": "http",
+							"host": ["{{host}}"],
+							"port": "{{port3}}",
+							"path": ["actuator", "health"]
+						},
+						"description": "Retorna el estado de salud y los detalles de la instancia 3 en 'instanceRegistration'."
+					}
+				}
+			]
+		}
+	]
+}
