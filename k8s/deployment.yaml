@@ -41,6 +41,11 @@ spec:
             # Prefijo para el identificador de proceso (proceso_cre_1, proceso_cre_2...)
             - name: INSTANCE_PROCESS_PREFIX
               value: "proceso_cre_"
+            # Esperas de seguridad para Kubernetes: estabilización inicial (5s) y doble verificación (3s)
+            - name: INSTANCE_STARTUP_DELAY_MS
+              value: "5000"
+            - name: INSTANCE_SUSPECT_VERIFICATION_DELAY_MS
+              value: "3000"
             # Intervalo de heartbeat (15s) y umbral de muerte (45s) para no saturar MongoDB
             - name: INSTANCE_HEARTBEAT_INTERVAL_MS
               value: "15000"

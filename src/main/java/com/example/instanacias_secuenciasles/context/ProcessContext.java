@@ -14,20 +14,26 @@ import lombok.ToString;
 @ToString
 public class ProcessContext {
 
+    private volatile String status = "PENDING_REGISTRATION";
     private volatile int instanceNumber = -1;
     private volatile String processIdentifier = "unregistered";
     private volatile String groupName = "";
     private volatile String podName = "";
 
     public void update(int instanceNumber, String processIdentifier, String groupName, String podName) {
+        this.status = "REGISTERED";
         this.instanceNumber = instanceNumber;
         this.processIdentifier = processIdentifier;
         this.groupName = groupName;
         this.podName = podName;
     }
 
+    public void markDeregistered() {
+        this.status = "DEREGISTERED";
+    }
+
     public boolean isRegistered() {
-        return this.instanceNumber > 0;
+        return "REGISTERED".equals(this.status) && this.instanceNumber > 0;
     }
 }
 

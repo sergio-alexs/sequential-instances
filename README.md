@@ -33,7 +33,12 @@ Prueba de concepto en **Spring Boot 4.x / Java 21** para el control de instancia
    - Cada instancia envía un pulso periódico (default: cada **15s**) actualizando `lastHeartbeat`.
    - Si no hay heartbeat en más de **45s** (3 pulsos perdidos), las demás instancias o la siguiente al iniciar la marcan como `INACTIVE`.
    - Chequeo periódico ligero cada **60s**.
-7. **Apagado Limpio y Concurrencia**:
+7. **Protocolo de Espera Segura y Control de Tráfico en Kubernetes**:
+   - **Espera inicial de estabilización (`startupDelayMs: 5000ms`)**: Al arrancar, el microservicio espera 5 segundos para permitir que cualquier instancia preexistente emita sus latidos y la red esté sincronizada.
+   - **Bloqueo de Readiness Probe (`ReadinessState.REFUSING_TRAFFIC`)**: Durante esta espera, Kubernetes recibe un HTTP 503 (`OUT_OF_SERVICE`) en `/actuator/health/readiness`, evitando enviarle tráfico al Pod antes de tiempo.
+   - **Doble Verificación de Muerte (`suspectVerificationDelayMs: 3000ms`)**: Antes de reclamar un número presuntamente inactivo, se realiza una pausa de 3s y re-consulta a Mongo para corroborar que no haya emitido latidos tardíos.
+   - **Activación de Tráfico (`ReadinessState.ACCEPTING_TRAFFIC`)**: Tras confirmar y registrar la secuencia de manera atómica, el Readiness pasa a HTTP 200 (`UP`) y el Pod comienza a recibir peticiones.
+8. **Apagado Limpio y Concurrencia**:
    - `@PreDestroy` marca inmediatamente el estado en `INACTIVE` ante un shutdown normal.
    - Índice único compuesto en `(groupName, instanceNumber)` + operaciones atómicas `findAndModify` con reintentos para evitar colisiones en arranques simultáneos.
 8. **Spring Boot Actuator Custom Health Indicator**:

@@ -28,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(properties = {
         "spring.data.mongodb.uri=mongodb://localhost:27017/sequential_instances_test",
+        "instance.startup-delay-ms=0",
+        "instance.suspect-verification-delay-ms=0",
         "instance.heartbeat-interval-ms=999999999",
         "instance.expiry-check-interval-ms=999999999",
         "instance.cleanup-interval-ms=999999999"
@@ -286,6 +288,8 @@ class InstanceRegistrationIntegrationTest {
     @DisplayName("Debe generar proceso_cre_[numero] y tener el bean ProcessContext listo para inyección")
     void shouldGenerateProcessIdentifierAndContext() {
         assertNotNull(processContext, "ProcessContext debe inyectarse como bean de Spring");
+        assertTrue(processContext.isRegistered(), "ProcessContext debe estar en estado REGISTERED");
+        assertEquals("REGISTERED", processContext.getStatus());
         assertTrue(processContext.getInstanceNumber() > 0, "Debe tener un número de instancia asignado");
         assertTrue(processContext.getProcessIdentifier().startsWith("proceso_cre_"),
                 "El identificador debe comenzar con el prefijo proceso_cre_");

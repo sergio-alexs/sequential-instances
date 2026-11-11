@@ -5,7 +5,10 @@ import java.time.Instant;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.availability.AvailabilityChangeEvent;
+import org.springframework.boot.availability.ReadinessState;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
@@ -39,6 +42,7 @@ public class InstanceRegistrationService {
     private final InstanceConfig config;
     private final ProcessContext processContext;
     private final ConfigurableEnvironment environment;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${spring.application.name}")
     private String groupName;
@@ -54,6 +58,20 @@ public class InstanceRegistrationService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void register() {
+        // Bloquear tráfico en Kubernetes durante el arranque y estabilización
+        AvailabilityChangeEvent.publish(eventPublisher, this, ReadinessState.REFUSING_TRAFFIC);
+
+        long startupDelay = config.getStartupDelayMs();
+        if (startupDelay > 0) {
+            log.info("⏳ Iniciando periodo de espera de {}ms para estabilización de latidos en Kubernetes...", startupDelay);
+            try {
+                Thread.sleep(startupDelay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("⚠️ Espera inicial interrumpida");
+            }
+        }
+
         String podName = resolvePodName();
         String hostInfo = resolveHostInfo(podName);
 
@@ -93,7 +111,11 @@ public class InstanceRegistrationService {
         System.setProperty("instance.number", String.valueOf(number));
         System.setProperty("process.identifier", processId);
 
-        // 4. Imprimir banner destacado al iniciar
+        // 4. Habilitar Readiness de Kubernetes: Pod listo para recibir tráfico
+        AvailabilityChangeEvent.publish(eventPublisher, this, ReadinessState.ACCEPTING_TRAFFIC);
+        log.info("🟢 Readiness probe de Kubernetes activada (ACCEPTING_TRAFFIC)");
+
+        // 5. Imprimir banner destacado al iniciar
         printStartupBanner(number, processId, podName, hostInfo);
     }
 
@@ -160,6 +182,10 @@ public class InstanceRegistrationService {
             return;
         }
 
+        // Informar a Kubernetes que este Pod ya no acepta tráfico
+        AvailabilityChangeEvent.publish(eventPublisher, this, ReadinessState.REFUSING_TRAFFIC);
+        processContext.markDeregistered();
+
         Query query = new Query(Criteria.where("_id").is(currentInstance.getId()));
         Update update = new Update()
                 .set("status", InstanceStatus.INACTIVE)
@@ -191,17 +217,39 @@ public class InstanceRegistrationService {
     // ──────────────────────────────────────────────
 
     /**
-     * Reclama atómicamente la instancia INACTIVE con el menor número del grupo.
+     * Reclama atómicamente la instancia INACTIVE con el menor número del grupo,
+     * realizando una doble verificación ante sospecha para no arrebatarle el número a una viva.
      */
     private ServiceInstance claimInactiveInstance(String hostInfo, String podName) {
         Query query = new Query(Criteria.where("groupName").is(groupName)
                 .and("status").is(InstanceStatus.INACTIVE))
                 .with(Sort.by(Sort.Direction.ASC, "instanceNumber"));
 
-        // Se busca primero el documento para saber su número y armar el processIdentifier
+        // Se busca primero el documento candidato
         ServiceInstance candidate = mongoTemplate.findOne(query, ServiceInstance.class);
         if (candidate == null) {
             return null;
+        }
+
+        // Doble verificación: si la verificación está activa, pausar y volver a consultar en Mongo
+        long verificationDelay = config.getSuspectVerificationDelayMs();
+        if (verificationDelay > 0) {
+            log.info("🔎 Realizando doble verificación para instancia vacante #{} (espera de {}ms)...",
+                    candidate.getInstanceNumber(), verificationDelay);
+            try {
+                Thread.sleep(verificationDelay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("⚠️ Doble verificación interrumpida");
+            }
+
+            // Volver a consultar el estado del candidato en MongoDB
+            ServiceInstance recheck = mongoTemplate.findById(candidate.getId(), ServiceInstance.class);
+            if (recheck == null || recheck.getStatus() == InstanceStatus.ACTIVE) {
+                log.warn("⚠️ La instancia #{} se reactivó durante la verificación. Buscando otra...",
+                        candidate.getInstanceNumber());
+                return null; // La instancia está viva o cambió, abortar reclamo
+            }
         }
 
         String processId = buildProcessIdentifier(candidate.getInstanceNumber());
@@ -215,7 +263,7 @@ public class InstanceRegistrationService {
                 .set("startedAt", Instant.now())
                 .unset("stoppedAt");
 
-        // findAndModify atómico condicionado a que siga estando INACTIVE
+        // findAndModify atómico condicionado a que siga estando estrictamente INACTIVE
         Query atomicQuery = new Query(Criteria.where("_id").is(candidate.getId())
                 .and("status").is(InstanceStatus.INACTIVE));
 

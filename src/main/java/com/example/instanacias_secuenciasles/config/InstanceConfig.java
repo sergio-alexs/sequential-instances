@@ -9,6 +9,16 @@ import lombok.Data;
 public class InstanceConfig {
 
     /**
+     * Tiempo de espera inicial al arrancar (ms) para estabilizar latidos en el clúster.
+     */
+    private long startupDelayMs = 5000;
+
+    /**
+     * Tiempo de doble verificación ante sospecha de muerte (ms).
+     */
+    private long suspectVerificationDelayMs = 3000;
+
+    /**
      * Tiempo en milisegundos sin heartbeat para considerar una instancia muerta (45s).
      */
     private long expiryThresholdMs = 45000;

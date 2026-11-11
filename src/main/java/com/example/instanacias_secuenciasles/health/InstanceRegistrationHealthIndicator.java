@@ -25,8 +25,9 @@ public class InstanceRegistrationHealthIndicator implements HealthIndicator {
         ServiceInstance current = registrationService.getCurrentInstance();
 
         if (current == null) {
-            return Health.down()
-                    .withDetail("reason", "Instancia no registrada")
+            return Health.outOfService()
+                    .withDetail("status", "PENDING_REGISTRATION")
+                    .withDetail("reason", "Esperando estabilización de latidos y asignación segura de secuencia")
                     .build();
         }
 
@@ -45,7 +46,8 @@ public class InstanceRegistrationHealthIndicator implements HealthIndicator {
         return Health.down()
                 .withDetail("groupName", current.getGroupName())
                 .withDetail("instanceNumber", current.getInstanceNumber())
-                .withDetail("processIdentifier", current.getProcessIdentifier() != null ? current.getProcessIdentifier() : "")
+                .withDetail("processIdentifier",
+                        current.getProcessIdentifier() != null ? current.getProcessIdentifier() : "")
                 .withDetail("status", current.getStatus().name())
                 .build();
     }
